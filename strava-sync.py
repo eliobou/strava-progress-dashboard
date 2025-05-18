@@ -35,23 +35,6 @@ def activity_exists(client, activity_id):
     result = query_api.query(org=ORG, query=query)
     return len(result) > 0  # True if the ID already exists
 
-# Retrieve the commute value of an activity in InfluxDB
-def get_activity_commute_value(client, activity_id):
-    query_api = client.query_api()
-    query = f'''
-    from(bucket: "{BUCKET}")
-        |> range(start: 0)
-        |> filter(fn: (r) => r._measurement == "activities" and r.id == "{activity_id}")
-        |> filter(fn: (r) => r._field == "commute_bool")
-        |> last()
-    '''
-    result = query_api.query(org=ORG, query=query)
-    
-    for table in result:
-        for record in table.records:
-            return str(int(record.get_value()))
-    return None
-
 # Get all activity IDs stored in InfluxDB for a given year
 def get_stored_activity_ids(client, year):
     start_date = datetime.datetime(year, 1, 1).isoformat() + "Z"
@@ -126,28 +109,9 @@ def sync_activities(access_token, year):
                 for activity in activities:
                     activity_id = activity["id"]
                     strava_activity_ids.append(activity_id)
-                    commute_value = str(int(activity.get("commute", False)))
                     
                     # Check if the activity already exists
-                    if activity_exists(client, activity_id):
-                        db_commute_value = get_activity_commute_value(client, activity_id)
-                        
-                        # If commute value changed, delete and recreate the activity
-                        if db_commute_value is not None and db_commute_value != commute_value:
-                            print(f"Activity {activity_id} commute value changed from {db_commute_value} to {commute_value}, updating...")
-                            success = delete_activity(client, activity_id)
-                            
-                            # Wait a bit to allow deletion to complete
-                            time.sleep(1)
-                            
-                            if success:
-                                # Recreate the activity with new data
-                                point = create_activity_point(activity)
-                                write_api.write(bucket=BUCKET, org=ORG, record=point)
-                                print(f"Activity {activity_id} updated with new commute value: {commute_value}")
-                        else:
-                            print(f"Activity {activity_id} already exists and is up to date, skipping.")
-                    else:
+                    if activity_exists(client, activity_id) == False:
                         # New activity, add it
                         point = create_activity_point(activity)
                         write_api.write(bucket=BUCKET, org=ORG, record=point)
@@ -218,7 +182,7 @@ def create_activity_point(activity):
         .field("end_latlng", str(activity.get("end_latlng", []))) \
         .field("start_date", activity["start_date"]) \
         .field("start_date_local", activity["start_date_local"]) \
-        .field("commute_bool", bool(activity.get("commute", False))) \
+        .field("commute", bool(activity.get("commute", False))) \
         .time(start_time, WritePrecision.NS)
     
     return point
@@ -244,7 +208,7 @@ def check_influx_connection():
         print(f"InfluxDB connection error: {str(e)}")
         return False
 
-# Example usage
+# Main
 if __name__ == "__main__":
     print("Checking InfluxDB connection...")
     if check_influx_connection():
