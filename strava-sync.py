@@ -164,7 +164,7 @@ def create_activity_point(activity):
             start_time = datetime.datetime.strptime(start_date_str, "%Y-%m-%dT%H:%M:%S.%fZ")
         except ValueError:
             # Fallback to current time if parsing fails
-            start_time = datetime.datetime.utcnow()
+            start_time = datetime.datetime.now(datetime.timezone.utc)
             print(f"Warning: Could not parse date '{start_date_str}' for activity {activity_id}, using current time.")
     
     point = Point("activities") \
