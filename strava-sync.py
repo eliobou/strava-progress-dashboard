@@ -205,7 +205,6 @@ def create_activity_point(activity):
     
     point = Point("activities") \
         .tag("type", activity["type"]) \
-        .tag("id", str(activity_id)) \
         .tag("commute", commute_value) \
         .field("id", activity_id) \
         .field("distance", activity["distance"]) \
