@@ -1,15 +1,15 @@
-# Utilise une image Python officielle
+# Use an official lightweight Python image
 FROM python:3.11-slim
 
-# Répertoire de travail
+# Set the working directory
 WORKDIR /app
 
-# Copier les fichiers du script
-COPY requirements.txt ./
-COPY strava-sync.py ./
-
-# Installer les dépendances
+# Copy and install dependencies
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Point d'entrée par défaut
+# Copy the scripts (at the end to preserve pip cache if possible)
+COPY scripts/ .
+
+# Define the default entry point
 CMD ["python", "strava-sync.py"]
