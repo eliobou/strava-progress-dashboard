@@ -9,7 +9,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the scripts (at the end to preserve pip cache if possible)
-COPY scripts/ .
+COPY scripts/strava_sync.py .
 
 # Define the default entry point
-CMD ["python", "strava-sync.py"]
+CMD ["python", "strava_sync.py"]
