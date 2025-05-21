@@ -17,6 +17,10 @@ CLIENT_SECRET = os.getenv("STRAVA_CLIENT_SECRET")
 REFRESH_TOKEN = os.getenv("STRAVA_REFRESH_TOKEN")
 TOKEN_URL = "https://www.strava.com/oauth/token"
 
+# Checking env variables
+if not all([INFLUXDB_URL, INFLUXDB_TOKEN, ORG, BUCKET, BASE_URL, CLIENT_ID, CLIENT_SECRET, REFRESH_TOKEN, TOKEN_URL]):
+    raise EnvironmentError("One or more environment variables are missing.")
+
 # Retrieve token from Strava
 def get_access_token():
     response = requests.post(TOKEN_URL, data={
@@ -29,9 +33,56 @@ def get_access_token():
     return response.json()['access_token']
 
 # Check if the activity already exists in the InfluxDB
+def day_numbers_exists(client, year):
+    query_api = client.query_api()
+    query = f'''from(bucket: "{BUCKET}") 
+                    |> range(start: 0) 
+                    |> filter(fn: (r) => r._measurement == "day_numbers" and 
+                                         r._field == "day_number" and 
+                                         r.year == {year})'''
+    result = query_api.query(org=ORG, query=query)
+    return len(result) > 0  # True if the day_numbers already exists
+
+# Day number calculation
+def get_day_of_year(date):
+    return date.timetuple().tm_yday
+
+def write_day_numbers(year):
+    # Connection to InfluxDB
+    client = InfluxDBClient(url=INFLUXDB_URL, token=INFLUXDB_TOKEN, org=ORG)
+    write_api = client.write_api(write_options=SYNCHRONOUS)
+    
+    # Begining and ending dates
+    start_date = datetime.date(year, 1, 1)
+    end_date = datetime.date(year, 12, 31)
+
+    # Writing to InfluxDB for every day
+    for single_date in (start_date + datetime.timedelta(n) for n in range((end_date - start_date).days + 1)):
+        day_number = get_day_of_year(single_date)
+
+        # Convert `datetime.date` to `datetime.datetime` while fixing hour to 00:00:00
+        datetime_obj = datetime.datetime(single_date.year, single_date.month, single_date.day, 0, 0, 0)
+        
+        point = Point("day_numbers") \
+            .tag("year", str(single_date.year)) \
+            .field("day_number", day_number) \
+            .time(datetime_obj, WritePrecision.NS)  # Use WritePrecision.NS
+        
+        # Writing in InfluxDB bucket
+        write_api.write(bucket=BUCKET, org=ORG, record=point)
+
+        print(f"Day {day_number} inserted")
+
+    print("All day numberq inserted with success!")
+
+# Check if the day numbers of the year exists in the InfluxDB
 def activity_exists(client, activity_id):
     query_api = client.query_api()
-    query = f'from(bucket: "{BUCKET}") |> range(start: 0) |> filter(fn: (r) => r._measurement == "activities" and r._field == "id" and r._value == {activity_id})'
+    query = f'''from(bucket: "{BUCKET}") 
+                    |> range(start: 0) 
+                    |> filter(fn: (r) => r._measurement == "activities" and 
+                                         r._field == "id" and 
+                                         r._value == {activity_id})'''
     result = query_api.query(org=ORG, query=query)
     return len(result) > 0  # True if the ID already exists
 
@@ -66,8 +117,8 @@ def delete_activity(client, activity_id):
     
     try:
         # Use start and end over a sufficiently large range
-        start_time = "1970-01-01T00:00:00Z"
-        end_time = "2030-01-01T00:00:00Z"
+        start_time = "2010-01-01T00:00:00Z"
+        end_time = "2040-01-01T00:00:00Z"
         
         delete_api.delete(start_time, end_time, predicate, bucket=BUCKET, org=ORG)
         print(f"Activity {activity_id} deleted from InfluxDB.")
@@ -212,7 +263,14 @@ def check_influx_connection():
 if __name__ == "__main__":
     print("Checking InfluxDB connection...")
     if check_influx_connection():
-        print("Connection successful, proceeding with sync.")
+        print("Connection successful.")
+        
+        print("Checking if day numbers exists in InfluxDB...")
+        if day_numbers_exists():
+            print("Day numbers exists in InfluxDB, proceeding with sync...")
+        else:
+            write_day_numbers(2025)
+
         token = get_access_token()
         sync_activities(token, 2025)
     else:
