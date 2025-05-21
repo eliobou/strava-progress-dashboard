@@ -25,9 +25,7 @@ services:
     volumes:
       - grafana-data:/var/lib/grafana
     environment:
-      - INFLUXDB_DB=${INFLUXDB_DB}
-      - INFLUXDB_USER=${INFLUXDB_USERNAME}
-      - INFLUXDB_PASSWORD=${INFLUXDB_PASSWORD}
+
     restart: unless-stopped
 
 
