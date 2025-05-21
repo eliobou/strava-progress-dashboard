@@ -33,7 +33,8 @@ def get_access_token():
     return response.json()['access_token']
 
 # Check if the activity already exists in the InfluxDB
-def day_numbers_exists(client, year):
+def day_numbers_exists(year):
+    client = InfluxDBClient(url=INFLUXDB_URL, token=INFLUXDB_TOKEN, org=ORG)
     query_api = client.query_api()
     query = f'''from(bucket: "{BUCKET}") 
                     |> range(start: 0) 
@@ -266,7 +267,7 @@ if __name__ == "__main__":
         print("Connection successful.")
         
         print("Checking if day numbers exists in InfluxDB...")
-        if day_numbers_exists():
+        if day_numbers_exists(2025):
             print("Day numbers exists in InfluxDB, proceeding with sync...")
         else:
             write_day_numbers(2025)
