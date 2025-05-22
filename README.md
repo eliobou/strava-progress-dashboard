@@ -1,9 +1,15 @@
 # 🚴 Strava Tracker Dashboard
 
-Track your progress toward Strava goals with this Grafana-powered dashboard.  
-This project **retrieves your Strava activities**, **stores them in InfluxDB**, and **visualizes them in Grafana**.
+**This project was initially developed to support a personal goal of cycling 2,500 km within a year.**  
+It provides a **self-hosted solution** for tracking **Strava activity data** without requiring a **premium subscription**.
 
-Everything is fully automated and containerized using **Docker**, with data synced every 5 minutes using a **cron job**.
+The system automatically **fetches activities from the Strava API**, **stores them in an InfluxDB** time-series database, and **visualizes the data in Grafana**.  
+It is **lightweight**, fully **containerized via Docker**, and designed to be **flexible** and easily **customizable** for any type of **fitness tracking** or **personal goal monitoring**.
+
+<p align="center">
+<img src="images/screenshot.png" border="10"/>
+</p>
+
 
 ---
 
@@ -69,7 +75,15 @@ STRAVA_REFRESH_TOKEN=your-strava-refresh-token
 git clone https://github.com/eliobou/strava-progress-dashboard.git
 cd strava-tracker-dashboard
 ```
-2. **Start the services**:
+
+:warning: **Don't forget to add your .env file with your configuration before continuing!**
+You can do so by renaming the example file and filling your details:
+```
+mv .env.example .env
+nano .env
+```
+
+1. **Start the services**:
 
 ```
 docker compose up -d --build
