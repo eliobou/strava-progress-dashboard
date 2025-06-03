@@ -122,10 +122,12 @@ Once inside Grafana:
 ```
 crontab -e
 ```
-2. Add the following line to run the sync script every 5 minutes:
+2. Add the following line to run the sync script every 5 minutes (might need to change the directory depending of your setup):
 
 ```
-*/5 * * * * docker compose strava-sync >> /var/log/strava_cron.log 2>&1
+
+*/5 * * * * cd /home/pi/strava-progress-dashboard && docker compose run --rm strava-sync >> /var/log/strava_cron.log 2>&1
+
 ```
 
 ---
