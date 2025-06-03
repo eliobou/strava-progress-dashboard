@@ -26,16 +26,15 @@ It is **lightweight**, fully **containerized via Docker**, and designed to be **
 
 ## 📁 Project Structure
 
-
+```
 ├── scripts/
-│ └── sync_strava.py
-│ └── day_year.py.py
+│   └── sync_strava.py
 ├── docker-compose.yml
 ├── Dockerfile
 ├── requirements.txt
 ├── .env
 └── README.md
-
+```
 ---
 
 ## 🧪 Prerequisites
