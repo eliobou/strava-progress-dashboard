@@ -36,11 +36,11 @@ def get_access_token():
 def day_numbers_exists(year):
     client = InfluxDBClient(url=INFLUXDB_URL, token=INFLUXDB_TOKEN, org=ORG)
     query_api = client.query_api()
-    query = f'''from(bucket: "{BUCKET}") 
-                    |> range(start: 0) 
-                    |> filter(fn: (r) => r._measurement == "day_numbers" and 
-                                         r._field == "day_number" and 
-                                         r.year == {year})'''
+    query = f"""
+        from(bucket: "{BUCKET}")
+            |> range(start: 0)
+            |> filter(fn: (r) => r._measurement == "day_numbers" and r._field == "day_number" and r["year"] == "{year}")
+    """
     result = query_api.query(org=ORG, query=query)
     return len(result) > 0  # True if the day_numbers already exists
 
